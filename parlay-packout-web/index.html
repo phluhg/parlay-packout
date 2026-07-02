@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Parlay Packout — MLB Daily Slate</title>
+
+<!-- PWA / iOS "Add to Home Screen" support -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2f5233">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Parlay Packout">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Courier+Prime:wght@400;700&display=swap');
+
+:root{
+  --paper: #f2e8d0;
+  --paper-2: #ece0c4;
+  --card: #fbf5e4;
+  --line: #c9b98d;
+  --line-soft: #dccfa4;
+  --grass: #2f5233;
+  --grass-dark: #223d27;
+  --brick: #a83e26;
+  --mustard: #c98a1f;
+  --ink: #2b2620;
+  --muted: #6e6350;
+  --mono: 'Courier Prime', monospace;
+  --display: 'Anton', sans-serif;
+  --serif: 'Libre Baskerville', serif;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:
+    radial-gradient(circle at 15% 8%, rgba(168,62,38,0.05), transparent 40%),
+    radial-gradient(circle at 85% 92%, rgba(47,82,51,0.06), transparent 45%),
+    var(--paper);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(110,99,80,0.035) 0px, rgba(110,99,80,0.035) 1px, transparent 1px, transparent 26px),
+    radial-gradient(circle at 15% 8%, rgba(168,62,38,0.05), transparent 40%),
+    radial-gradient(circle at 85% 92%, rgba(47,82,51,0.06), transparent 45%);
+  color:var(--ink);
+  font-family:var(--serif);
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 20px 80px;}
+
+/* stitching divider */
+.stitch{
+  height:14px;
+  background-image: repeating-linear-gradient(100deg, var(--brick) 0 10px, transparent 10px 20px);
+  -webkit-mask: repeating-linear-gradient(90deg, black 0 10px, transparent 10px 14px);
+  mask: repeating-linear-gradient(90deg, black 0 10px, transparent 10px 14px);
+  opacity:0.55;
+  margin: 14px 0 22px;
+}
+
+/* Header */
+header{
+  display:flex; justify-content:space-between; align-items:flex-end;
+  padding-bottom:6px; margin-bottom:0;
+  flex-wrap:wrap; gap:12px;
+  border-bottom:4px solid var(--ink);
+}
+.brand{display:flex; flex-direction:column; gap:2px;}
+.brand .mark{
+  font-family:var(--display); font-weight:400; font-size:44px; letter-spacing:0.5px;
+  text-transform:uppercase; color:var(--ink); line-height:0.95;
+  text-shadow: 2px 2px 0 var(--mustard);
+}
+.brand .mark span{color:var(--brick); text-shadow:2px 2px 0 var(--mustard);}
+.brand .sub{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--grass-dark); letter-spacing:2px; text-transform:uppercase; margin-top:4px;}
+.datebadge{
+  font-family:var(--mono); font-weight:700; font-size:13px; color:var(--card);
+  border:2px solid var(--ink); background:var(--grass-dark);
+  padding:9px 16px; border-radius:2px; transform:rotate(-2deg);
+  box-shadow:3px 3px 0 rgba(43,38,32,0.25);
+}
+.fmt-toggle{
+  display:flex; border:2px solid var(--ink); border-radius:3px; overflow:hidden;
+  box-shadow:3px 3px 0 rgba(43,38,32,0.12);
+}
+.fmt-btn{
+  font-family:var(--mono); font-weight:700; font-size:12px; letter-spacing:0.5px;
+  padding:9px 14px; border:none; cursor:pointer; background:var(--paper-2); color:var(--muted);
+}
+.fmt-btn.active{background:var(--mustard); color:var(--ink);}
+.fmt-btn:not(.active):hover{background:var(--card);}
+
+.live-status{
+  display:flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11px;
+  color:var(--muted); background:var(--paper-2); border:2px solid var(--line); border-radius:3px;
+  padding:8px 12px;
+}
+.live-dot-lg{width:8px; height:8px; border-radius:50%; background:var(--muted); display:inline-block;}
+.live-status.is-live .live-dot-lg{background:var(--grass); box-shadow:0 0 0 0 rgba(47,82,51,0.5); animation:pulse 1.8s infinite;}
+.live-status.is-error .live-dot-lg{background:var(--brick);}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(47,82,51,0.5);}
+  70%{box-shadow:0 0 0 6px rgba(47,82,51,0);}
+  100%{box-shadow:0 0 0 0 rgba(47,82,51,0);}
+}
+.live-dot{color:var(--grass); font-size:9px; margin:0 2px;}
+.lean-chip.lean-live{background:var(--grass); color:var(--card); border-color:var(--ink);}
+
+/* Tabs */
+.tabs{display:flex; gap:10px; margin:22px 0 18px;}
+.tab{
+  font-family:var(--display); text-transform:uppercase; letter-spacing:0.5px;
+  font-size:16px; padding:10px 20px; cursor:pointer; color:var(--muted);
+  background:var(--paper-2); border:2px solid var(--line); border-radius:3px 3px 0 0;
+  user-select:none; border-bottom:none; position:relative; top:2px;
+}
+.tab.active{color:var(--card); background:var(--grass-dark); border-color:var(--ink);}
+.tab:hover:not(.active){color:var(--ink); background:var(--card);}
+
+.view{display:none;}
+.view.active{display:block;}
+
+/* Disclaimer */
+.disclaimer{
+  background:var(--card); border:2px dashed var(--brick);
+  padding:14px 18px; border-radius:4px; font-size:13px; color:var(--ink); line-height:1.65;
+  margin-bottom:22px; position:relative;
+}
+.disclaimer:before{
+  content:"⚾ GROUND RULES"; display:block; font-family:var(--display); font-size:13px;
+  color:var(--brick); letter-spacing:1px; margin-bottom:6px;
+}
+.disclaimer b{color:var(--brick);}
+
+/* Game cards -- styled like a ticket stub */
+.game{
+  background:var(--card); border:2px solid var(--ink); border-radius:5px;
+  margin-bottom:16px; overflow:hidden;
+  box-shadow:4px 4px 0 rgba(43,38,32,0.12);
+}
+.game-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 18px; cursor:pointer;
+  background:
+    linear-gradient(90deg, var(--grass) 6px, transparent 6px);
+}
+.matchup{display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+.teams{font-family:var(--display); font-size:23px; font-weight:400; letter-spacing:0.3px;}
+.teams .away{color:var(--ink);}
+.teams .at{color:var(--muted); font-weight:400; margin:0 8px; font-size:15px; font-family:var(--serif); font-style:italic;}
+.teams .home{color:var(--brick);}
+.time{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--muted); margin-top:3px;}
+.lean-chip{
+  font-family:var(--mono); font-weight:700; font-size:12px; padding:6px 12px; border-radius:2px;
+  background:var(--mustard); color:var(--ink); border:2px solid var(--ink);
+  white-space:nowrap;
+}
+.chevron{color:var(--muted); font-size:14px; margin-left:14px; transition:transform .15s;}
+.game.open .chevron{transform:rotate(90deg);}
+
+.game-body{display:none; padding:4px 20px 22px; border-top:2px dashed var(--line);}
+.game.open .game-body{display:block;}
+
+.section-label{
+  font-family:var(--display); font-size:13px; text-transform:uppercase; letter-spacing:1px;
+  color:var(--grass-dark); margin:18px 0 10px; display:flex; align-items:center; gap:8px;
+}
+.section-label:before{content:""; width:18px; height:2px; background:var(--brick); display:inline-block;}
+
+.pitchers{display:flex; gap:14px; margin-top:10px;}
+.pitcher-card{
+  flex:1; background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:12px 14px;
+}
+.pitcher-card .side{font-family:var(--mono); font-weight:700; font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:1px;}
+.pitcher-card .name{font-weight:700; margin:4px 0; font-family:var(--serif);}
+.pitcher-card .stat{font-family:var(--mono); font-size:12.5px; color:var(--muted);}
+
+.injury-item{
+  display:flex; gap:10px; padding:9px 0; border-bottom:1px dotted var(--line); font-size:13.5px;
+}
+.injury-item:last-child{border-bottom:none;}
+.injury-tag{
+  font-family:var(--mono); font-weight:700; font-size:10px; padding:3px 7px; border-radius:2px; height:fit-content;
+  white-space:nowrap; border:1.5px solid;
+}
+.tag-out{background:#f3d9d0; color:var(--brick); border-color:var(--brick);}
+.tag-dtd{background:#f2e3bd; color:var(--mustard); border-color:var(--mustard);}
+.tag-back{background:#dde8dc; color:var(--grass-dark); border-color:var(--grass-dark);}
+.injury-text b{color:var(--ink);}
+.injury-text .impact{display:block; color:var(--muted); margin-top:3px; font-size:12.5px; font-style:italic;}
+
+.context-text{font-size:14px; line-height:1.75; color:var(--ink);}
+
+.prop{
+  background:var(--paper-2); border:1px solid var(--line); border-radius:4px;
+  padding:12px 14px; margin-bottom:8px;
+}
+.prop-head{display:flex; justify-content:space-between; align-items:center;}
+.prop-name{font-weight:700; font-size:13.5px; font-family:var(--serif);}
+.confidence{font-family:var(--mono); font-weight:700; font-size:10.5px; padding:3px 9px; border-radius:2px; border:1.5px solid;}
+.conf-high{background:#dde8dc; color:var(--grass-dark); border-color:var(--grass-dark);}
+.conf-med{background:#f2e3bd; color:var(--mustard); border-color:var(--mustard);}
+.conf-spec{background:#eee5d1; color:var(--muted); border-color:var(--line);}
+.prop-reason{font-size:12.5px; color:var(--muted); margin-top:6px; line-height:1.6;}
+
+.ml-box{
+  display:flex; justify-content:space-between; align-items:center;
+  background:var(--grass-dark); border:2px solid var(--ink); border-radius:4px; padding:14px 18px;
+  margin-top:8px; color:var(--card);
+}
+.ml-pick{font-family:var(--display); font-size:18px; font-weight:400; letter-spacing:0.3px;}
+.ml-odds{font-family:var(--mono); font-weight:700; font-size:15px; color:var(--mustard);}
+.ml-prob{font-family:var(--mono); font-size:11px; color:#c9d6c8; margin-top:3px;}
+.add-parlay-btn{
+  font-family:var(--mono); font-weight:700; font-size:11px; background:var(--paper); color:var(--ink);
+  border:2px solid var(--card); padding:7px 13px; border-radius:2px; cursor:pointer;
+}
+.add-parlay-btn:hover{background:var(--mustard);}
+.add-parlay-btn.added{background:var(--brick); color:var(--card); border-color:var(--card);}
+
+/* Parlay builder */
+.parlay-grid{display:grid; grid-template-columns: 1.3fr 1fr; gap:20px;}
+@media(max-width:760px){.parlay-grid{grid-template-columns:1fr;}}
+.leg-list{background:var(--card); border:2px solid var(--ink); border-radius:5px; padding:8px; box-shadow:4px 4px 0 rgba(43,38,32,0.12);}
+.leg-row{
+  display:flex; align-items:center; gap:12px; padding:13px 12px; border-bottom:1px dotted var(--line);
+}
+.leg-row:last-child{border-bottom:none;}
+.leg-row input{accent-color:var(--brick); width:17px; height:17px;}
+.leg-info{flex:1;}
+.leg-title{font-weight:700; font-size:13.5px; font-family:var(--serif);}
+.leg-sub{font-family:var(--mono); font-size:11px; color:var(--muted);}
+.leg-odds{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--grass-dark);}
+
+.slip{
+  background:var(--card); border:2px solid var(--ink); border-radius:5px; padding:18px;
+  position:sticky; top:20px; height:fit-content; box-shadow:4px 4px 0 rgba(43,38,32,0.12);
+}
+.slip h3{font-family:var(--display); margin:0 0 4px; text-transform:uppercase; font-size:19px; letter-spacing:0.5px; color:var(--brick);}
+.slip .count{font-family:var(--mono); font-size:12px; color:var(--muted); margin-bottom:14px;}
+.slip-legs{max-height:180px; overflow-y:auto; margin-bottom:14px;}
+.slip-leg{font-size:12px; padding:7px 0; border-bottom:1px dotted var(--line); color:var(--ink);}
+.slip-leg:last-child{border-bottom:none;}
+.slip-empty{font-size:12.5px; color:var(--muted); font-style:italic;}
+.stake-row{display:flex; align-items:center; gap:8px; margin:14px 0 10px;}
+.stake-row label{font-family:var(--mono); font-weight:700; font-size:11px; color:var(--muted);}
+.stake-row input{
+  background:var(--paper-2); border:1.5px solid var(--line); color:var(--ink);
+  padding:7px 10px; border-radius:3px; width:90px; font-family:var(--mono); font-size:13px;
+}
+.metric-row{display:flex; justify-content:space-between; padding:9px 0; border-top:1px dotted var(--line); font-size:13px;}
+.metric-row .k{color:var(--muted);}
+.metric-row .v{font-family:var(--mono); font-weight:700;}
+.v.warn{color:var(--brick);}
+.v.good{color:var(--grass-dark);}
+.riskbar{height:8px; border-radius:3px; background:var(--paper-2); margin:12px 0 4px; overflow:hidden; border:1px solid var(--line);}
+.riskbar-fill{height:100%; background:linear-gradient(90deg, var(--grass), var(--mustard), var(--brick));}
+.riskbar-label{font-family:var(--mono); font-size:10.5px; color:var(--muted); display:flex; justify-content:space-between;}
+.clear-btn{
+  width:100%; margin-top:14px; background:transparent; border:1.5px solid var(--line); color:var(--muted);
+  padding:9px; border-radius:3px; cursor:pointer; font-family:var(--mono); font-weight:700; font-size:11px; letter-spacing:0.5px;
+}
+.clear-btn:hover{border-color:var(--brick); color:var(--brick);}
+
+.methodology{
+  margin-top:24px; padding:16px 18px; background:var(--card); border:2px dashed var(--line);
+  border-radius:6px; font-size:12.5px; color:var(--muted); line-height:1.75;
+}
+.methodology h4{color:var(--brick); font-family:var(--display); margin:0 0 8px; text-transform:uppercase; font-size:15px; letter-spacing:0.5px;}
+
+/* News wire */
+.news-lede{
+  font-family:var(--serif); font-style:italic; font-size:13.5px; color:var(--muted);
+  padding-bottom:14px; margin-bottom:18px; border-bottom:3px double var(--ink);
+}
+.clip{
+  background:var(--card); border:2px solid var(--ink); border-radius:3px;
+  padding:16px 20px; margin-bottom:16px; box-shadow:4px 4px 0 rgba(43,38,32,0.12);
+  position:relative;
+}
+.clip-top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; flex-wrap:wrap;}
+.clip-tags{display:flex; gap:6px; flex-wrap:wrap;}
+.clip-team{
+  font-family:var(--mono); font-weight:700; font-size:10px; letter-spacing:1px; text-transform:uppercase;
+  background:var(--grass-dark); color:var(--card); padding:3px 8px; border-radius:2px;
+}
+.clip-date{font-family:var(--mono); font-size:11px; color:var(--muted); white-space:nowrap;}
+.clip-headline{
+  font-family:var(--display); font-size:19px; font-weight:400; letter-spacing:0.2px; line-height:1.2;
+  color:var(--ink); margin:4px 0 8px;
+}
+.clip-body{font-family:var(--serif); font-size:14px; line-height:1.75; color:var(--ink);}
+.clip-body b{color:var(--brick);}
+.clip-foot{
+  display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:10px;
+  border-top:1px dotted var(--line);
+}
+.clip-source{font-family:var(--mono); font-size:11px; color:var(--muted); font-style:italic;}
+.clip-source a{color:var(--grass-dark); text-decoration:none; font-weight:700;}
+.clip-source a:hover{text-decoration:underline;}
+
+/* Trading Desk */
+.trade-btn{
+  font-family:var(--mono); font-weight:700; font-size:11px; background:var(--brick); color:var(--card);
+  border:2px solid var(--ink); padding:7px 13px; border-radius:2px; cursor:pointer;
+}
+.trade-btn:hover{filter:brightness(1.1);}
+.mode-switch{display:flex; gap:10px; margin-bottom:18px;}
+.mode-btn{
+  font-family:var(--display); font-size:14px; letter-spacing:0.3px; text-transform:uppercase;
+  padding:10px 18px; border:2px solid var(--ink); border-radius:3px; cursor:pointer;
+  background:var(--paper-2); color:var(--muted);
+}
+.mode-btn.active{background:var(--grass-dark); color:var(--card);}
+#modeLive.active{background:var(--brick);}
+.desk-panel{
+  background:var(--card); border:2px solid var(--ink); border-radius:5px; padding:18px 20px;
+  margin-bottom:18px; box-shadow:4px 4px 0 rgba(43,38,32,0.12);
+}
+.desk-h{font-family:var(--display); font-size:16px; letter-spacing:0.3px; margin:0 0 6px; color:var(--brick); text-transform:uppercase;}
+.desk-sub{font-size:12.5px; color:var(--muted); line-height:1.6; margin:0 0 12px;}
+.form-row{margin-bottom:14px;}
+.form-row label{display:block; font-family:var(--mono); font-weight:700; font-size:11px; color:var(--muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;}
+.form-row input, .form-row select{
+  width:100%; background:var(--paper-2); border:1.5px solid var(--line); color:var(--ink);
+  padding:9px 11px; border-radius:3px; font-family:var(--mono); font-size:13px;
+}
+.account-row{
+  display:flex; justify-content:space-between; align-items:center; gap:14px;
+  padding:12px 0; border-bottom:1px dotted var(--line); flex-wrap:wrap;
+}
+.account-row:last-of-type{border-bottom:none;}
+.ledger-row{
+  background:var(--card); border:1px solid var(--line); border-radius:4px; padding:12px 16px;
+  margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;
+}
+.ledger-tag{font-family:var(--mono); font-weight:700; font-size:10px; padding:3px 8px; border-radius:2px; border:1.5px solid;}
+.ledger-tag.paper{background:#eee5d1; color:var(--muted); border-color:var(--line);}
+.ledger-tag.live{background:#f3d9d0; color:var(--brick); border-color:var(--brick);}
+.ledger-empty{font-size:13px; color:var(--muted); font-style:italic; padding:10px 0;}
+
+/* Modal */
+.modal-overlay{
+  display:none; position:fixed; inset:0; background:rgba(43,38,32,0.55); z-index:100;
+  align-items:center; justify-content:center; padding:20px;
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:var(--card); border:2px solid var(--ink); border-radius:6px; max-width:440px; width:100%;
+  box-shadow:6px 6px 0 rgba(43,38,32,0.25); max-height:88vh; overflow-y:auto;
+}
+.modal-head{
+  display:flex; justify-content:space-between; align-items:center; padding:16px 20px;
+  border-bottom:2px solid var(--ink); font-family:var(--display); font-size:17px; text-transform:uppercase;
+}
+.modal-close{background:none; border:none; font-size:18px; cursor:pointer; color:var(--muted);}
+.modal-close:hover{color:var(--brick);}
+#modalBody{padding:18px 20px;}
+.confirm-input{
+  width:100%; background:var(--paper-2); border:2px solid var(--brick); color:var(--ink);
+  padding:10px 12px; border-radius:3px; font-family:var(--mono); font-size:14px; text-align:center;
+  letter-spacing:2px; margin-top:6px;
+}
+.order-summary{background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:12px 14px; margin:12px 0; font-size:13px; line-height:1.9;}
+.order-summary .row{display:flex; justify-content:space-between;}
+.order-summary .row b{font-family:var(--mono);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="mark">Parlay<span>Packout</span></div>
+      <div class="sub">Today's Ballgame Research · July 2, 2026</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="live-status" id="liveStatus" onclick="manualRefresh()" style="cursor:pointer;" title="Click to refresh now">
+        <span class="live-dot-lg" id="liveDot"></span>
+        <span id="liveStatusText">Connecting…</span>
+      </div>
+      <div class="fmt-toggle" id="fmtToggle">
+        <button class="fmt-btn active" id="fmtAmerican" onclick="setOddsFormat('american')">ODDS</button>
+        <button class="fmt-btn" id="fmtPercent" onclick="setOddsFormat('percent')">%</button>
+      </div>
+      <div class="datebadge">⚾ 9 ON THE SLATE</div>
+    </div>
+  </header>
+  <div class="stitch"></div>
+
+  <div class="tabs">
+    <div class="tab active" data-view="slate">🎫 Today's Slate</div>
+    <div class="tab" data-view="parlay">📋 Parlay Builder</div>
+    <div class="tab" data-view="news">📰 News Wire</div>
+  </div>
+
+  <div class="disclaimer">
+    These are research-based leans, not guaranteed winners — nobody can promise that in sports betting. Win probabilities below are <b>estimated</b> from season records, probable-pitcher performance, home field, and today's injury news — they are not official sportsbook lines, so check your actual book before betting. Lineups aren't final until 1–3 hours before first pitch, so treat injury notes as "as of this morning." Bet only what you can afford to lose.
+  </div>
+
+  <!-- ============ SLATE VIEW ============ -->
+  <div class="view active" id="view-slate"></div>
+
+  <!-- ============ PARLAY VIEW ============ -->
+  <div class="view" id="view-parlay">
+    <div class="parlay-grid">
+      <div class="leg-list" id="legList"></div>
+      <div class="slip">
+        <h3>Bet Slip</h3>
+        <div class="count" id="slipCount">0 legs selected</div>
+        <div class="slip-legs" id="slipLegs"><div class="slip-empty">Select 3–10 moneyline leans from the left to build a parlay.</div></div>
+        <div class="stake-row">
+          <label>STAKE $</label>
+          <input type="number" id="stakeInput" value="20" min="1">
+        </div>
+        <div class="metric-row"><span class="k">Combined odds</span><span class="v" id="combOdds">—</span></div>
+        <div class="metric-row"><span class="k">Implied hit probability</span><span class="v" id="combProb">—</span></div>
+        <div class="metric-row"><span class="k">Potential payout</span><span class="v good" id="payout">—</span></div>
+        <div class="riskbar"><div class="riskbar-fill" id="riskFill" style="width:0%"></div></div>
+        <div class="riskbar-label"><span>Low risk</span><span>High risk</span></div>
+        <button class="clear-btn" id="clearBtn">Clear slip</button>
+      </div>
+    </div>
+
+    <div class="methodology">
+      <h4>How this works</h4>
+      Every added leg is a moneyline lean from the Slate tab. Combined probability = each leg's win probability multiplied together (assumes independence, which is roughly true across different games). More legs = lower combined probability even if each individual pick looks solid — that's the mathematical trade-off of parlays, not a flaw in the research. A 3-leg parlay of "likely" picks might hit 35–45% of the time; a 10-leg parlay of the same quality picks might hit under 5%. Parlays are inherently -EV relative to straight bets in almost all cases because the book's hold compounds on every leg — use them for entertainment/upside, not as a primary strategy.
+    </div>
+  </div>
+
+  <!-- ============ NEWS WIRE VIEW ============ -->
+  <div class="view" id="view-news">
+    <div class="news-lede">Official statements, beat-writer reporting, and team announcements touching today's slate — each summarized in our own words with a link back to the original source. Pulled the morning of July 2, 2026.</div>
+    <div id="newsList"></div>
+  </div>
+
+</div>
+
+<script>
+// ---------- DATA: today's real MLB slate (probable pitchers via MLB.com, injuries via MLB.com Injury Report) ----------
+const games = [
+  {
+    id:'pit-phi', away:'Pirates', home:'Phillies', awayAbbr:'PIT', homeAbbr:'PHI',
+    time:'12:35 PM EDT', park:'Citizens Bank Park',
+    awayRec:'43-44', homeRec:'49-38',
+    awayP:{name:'Jared Jones', hand:'RHP', line:'1-1, 5.76 ERA, 25 SO', note:'Left last start after being hit by a comebacker off the elbow — X-rays came back negative and he was cleared to make this start, but track early-inning workload.'},
+    homeP:{name:'Alan Rangel', hand:'RHP', line:'0-1, 4.50 ERA, 13 SO'},
+    injuries:[
+      {team:'PIT', player:'Oneil Cruz', status:'OUT', tag:'tag-out', note:'Fractures in hand, on IL.', impact:'Everyday CF/thump bat — one of Pittsburgh\'s top 2-3 hitters. Big offensive downgrade with him out.'},
+      {team:'PIT', player:'Jared Jones', status:'STARTING', tag:'tag-back', note:'Cleared to start tonight after being hit by a line drive last outing.', impact:'Worth monitoring pitch count/velocity early.'},
+      {team:'PHI', player:'Zack Wheeler', status:'DTD', tag:'tag-dtd', note:'Interim manager Don Mattingly pulled him after 104 pitches in Wednesday\'s win over Pittsburgh; Wheeler was visibly frustrated leaving the mound.', impact:'Not pitching today\'s game, but a workload note worth tracking for his next scheduled start.'}
+    ],
+    context:'Philadelphia is the better team on paper (49-38 vs 43-44) and gets a soft matchup vs a shaky Rangel-facing Pirates lineup that\'s already without Oneil Cruz, its best power threat. Jones has a bloated 5.76 ERA and is coming back from being hit by a comebacker, adding uncertainty to how deep he goes. Phillies\' lineup is deep enough to do damage against a Pirates pen that\'ll likely need to cover extra innings if Jones is limited.',
+    props:[
+      {name:'Phillies team total OVER', conf:'conf-high', label:'High', reason:'Facing a Pirates offense missing its middle-of-order power bat (Cruz) and a starter who owns a 5.76 ERA and just returned from injury.'},
+      {name:'Pirates team total UNDER', conf:'conf-med', label:'Medium', reason:'Cruz\'s absence removes a key extra-base-hit source; Rangel has been solid enough (4.50 ERA, respectable K rate) to keep this offense in check for stretches.'}
+    ],
+    mlPick:'home', mlProb:0.58
+  },
+  {
+    id:'cin-mil', away:'Reds', home:'Brewers', awayAbbr:'CIN', homeAbbr:'MIL',
+    time:'2:10 PM EDT', park:'American Family Field',
+    awayRec:'39-46', homeRec:'53-31',
+    awayP:{name:'Chase Burns', hand:'RHP', line:'9-1, 2.36 ERA, 112 SO'},
+    homeP:{name:'Jacob Misiorowski', hand:'RHP', line:'9-3, 1.45 ERA, 146 SO', note:'One of the best starters in baseball right now by ERA and strikeout rate.'},
+    injuries:[
+      {team:'CIN', player:'Elly De La Cruz', status:'ACTIVATED', tag:'tag-back', note:'Off the IL (hamstring strain) and back in the lineup.', impact:'Reds\' best all-around player — huge boost to a lineup that struggled without him. Still, first games back can come with a workload cap.'},
+      {team:'MIL', player:'Jesús Made (prospect)', status:'DTD', tag:'tag-dtd', note:'Left a game with a quad contusion.', impact:'Top prospect, still limited MLB role — modest impact if he sits.'}
+    ],
+    context:'This is a true ace-vs-ace pitching matchup — Burns (2.36 ERA) against Misiorowski (1.45 ERA, elite K rate). Expect a lower-scoring, strikeout-heavy game. Milwaukee is the far better overall team (53-31) and at home, but Cincinnati\'s Burns has been genuinely excellent, so this is more competitive than the records alone suggest. Elly De La Cruz returning from injury is the swing factor for Cincinnati\'s offense. Separately, there\'s buzz this week that Misiorowski may not pitch in this year\'s All-Star Game — not a factor for tonight, but worth knowing for his usage pattern around the break.',
+    props:[
+      {name:'Total strikeouts (both pitchers) OVER', conf:'conf-high', label:'High', reason:'Two of the more dominant strikeout arms in the league on the mound; both are running K rates well above league average this season.'},
+      {name:'Game total runs UNDER', conf:'conf-med', label:'Medium', reason:'When both starters are this good, run-scoring tends to be suppressed, especially in the first 5-6 innings before bullpens get involved.'}
+    ],
+    mlPick:'home', mlProb:0.63
+  },
+  {
+    id:'mia-col', away:'Marlins', home:'Rockies', awayAbbr:'MIA', homeAbbr:'COL',
+    time:'3:10 PM EDT', park:'Coors Field',
+    awayRec:'46-41', homeRec:'34-53',
+    awayP:{name:'Ryan Gusto', hand:'RHP', line:'0-2, 5.06 ERA, 20 SO'},
+    homeP:{name:'Michael Lorenzen', hand:'RHP', line:'3-9, 6.83 ERA, 66 SO'},
+    injuries:[
+      {team:'MIA', player:'Eury Pérez', status:'BACK', tag:'tag-back', note:'Reinstated from IL and starting for Miami this series.', impact:'Miami\'s top pitching prospect returning gives them a much stronger rotation outlook, though he isn\'t on the mound tonight.'},
+      {team:'COL', player:'Chase Dollander', status:'OUT', tag:'tag-out', note:'On the 60-day IL, trending toward UCL surgery.', impact:'Rockies rotation depth is thin; expect their bullpen to be taxed often this stretch.'},
+      {team:'COL', player:'Mickey Moniak', status:'BACK', tag:'tag-back', note:'Hit for the cycle-adjacent line Wednesday — homer, double, and triple — in Colorado\'s win over Miami at Coors.', impact:'Hot bat right now; worth a look for hitting props even in an otherwise weak Rockies lineup.'}
+    ],
+    context:'Coors Field is the most run-friendly park in the league by a wide margin — thin air adds carry on fly balls and extends gaps. Neither starter has been effective (Gusto 5.06 ERA, Lorenzen 6.83 ERA), which combined with the ballpark points to a high-scoring game. Colorado is the worst record in this game by a wide margin (34-53) and their rotation is further weakened with Dollander out for the year.',
+    props:[
+      {name:'Game total runs OVER', conf:'conf-high', label:'High', reason:'Coors Field\'s altitude effect plus two starters running ERAs north of 5.00 is about as favorable a combination for scoring as this sport offers.'},
+      {name:'Marlins team total OVER', conf:'conf-med', label:'Medium', reason:'Miami is the better roster facing the league\'s easiest park to score in against a struggling Rockies staff.'}
+    ],
+    mlPick:'away', mlProb:0.62
+  },
+  {
+    id:'cws-cle', away:'White Sox', home:'Guardians', awayAbbr:'CWS', homeAbbr:'CLE',
+    time:'6:40 PM EDT', park:'Progressive Field',
+    awayRec:'45-40', homeRec:'45-42',
+    awayP:{name:'Davis Martin', hand:'RHP', line:'9-3, 3.00 ERA, 90 SO', note:'Quietly having a strong season.'},
+    homeP:{name:'Slade Cecconi', hand:'RHP', line:'4-6, 4.18 ERA, 70 SO'},
+    injuries:[
+      {team:'CLE', player:'Chase DeLauter', status:'DTD', tag:'tag-dtd', note:'Resuming baseball activities after a rib cage fracture, could return this homestand.', impact:'Not yet back tonight — Guardians still without a key young outfield bat.'},
+      {team:'CLE', player:'José Ramírez', status:'OUT', tag:'tag-out', note:'Had surgery Tuesday to remove the hook of a broken hamate bone in his left hand, per a team statement; manager Stephen Vogt confirmed the procedure went as planned.', impact:'Guardians\' All-Star third baseman and best hitter — normal recovery is 5-7 weeks, a major blow to Cleveland\'s lineup.'},
+      {team:'CLE', player:'Angel Martínez', status:'OUT', tag:'tag-out', note:'Placed on the IL with a nondisplaced fracture in his left foot; Vogt said he could miss 4-6 weeks.', impact:'Second Guardians regular lost from the same game — outfield/infield depth is getting thin.'}
+    ],
+    context:'Records were nearly identical (45-40 vs 45-42) before this week, but Cleveland just lost two everyday players from the same game — José Ramírez (hamate surgery, out 5-7 weeks) and Angel Martínez (fractured foot, out 4-6 weeks) — on top of already missing DeLauter. That\'s a significant lineup downgrade layered on top of a real pitching edge for Chicago, whose Martin (3.00 ERA) is well ahead of Cecconi (4.18 ERA). This one has shifted toward the White Sox more than the records alone suggest.',
+    props:[
+      {name:'Davis Martin — under team runs allowed', conf:'conf-high', label:'High', reason:'ERA edge over his counterpart plus a Cleveland lineup that just lost Ramírez and Martínez in the same week — a meaningfully weaker order than usual.'},
+      {name:'Guardians team total UNDER', conf:'conf-med', label:'Medium', reason:'Losing your best hitter (Ramírez) and another regular (Martínez) in the same stretch is a tough spot for any offense to absorb quickly.'}
+    ],
+    mlPick:'away', mlProb:0.58
+  },
+  {
+    id:'stl-atl', away:'Cardinals', home:'Braves', awayAbbr:'STL', homeAbbr:'ATL',
+    time:'7:15 PM EDT', park:'Truist Park',
+    awayRec:'44-39', homeRec:'50-34',
+    awayP:{name:'Dustin May', hand:'RHP', line:'5-6, 4.30 ERA, 77 SO'},
+    homeP:{name:'Hurston Waldrep', hand:'RHP', line:'0-0, 0.00 ERA, 3 SO', note:'Extremely small sample size — essentially a rookie debut-level look, so treat his projection with real uncertainty.'},
+    injuries:[
+      {team:'STL', player:'Masyn Winn', status:'DTD', tag:'tag-dtd', note:'Left thumb — late scratch from a recent lineup.', impact:'Everyday shortstop and a key table-setter; if he\'s out again tonight it thins the Cardinals\' lineup.'},
+      {team:'STL', player:'Lars Nootbaar', status:'BACK', tag:'tag-back', note:'Off the IL and back with the club.', impact:'Adds a quality bat back to the St. Louis outfield mix.'},
+      {team:'ATL', player:'Robert Suárez', status:'DTD', tag:'tag-dtd', note:'Forearm soreness, unavailable out of the bullpen recently.', impact:'Braves\' closer being unavailable is a real bullpen risk in a close, late game.'}
+    ],
+    context:'Atlanta is the better team overall (50-34, at home) but their closer situation is shaky with Suárez dealing with forearm soreness — worth factoring into any late/close-game lean. St. Louis\' Masyn Winn is banged up, which is a lineup downgrade, partially offset by Nootbaar\'s return. Waldrep\'s 0.00 ERA is essentially a debut sample — don\'t read too much into it either way.',
+    props:[
+      {name:'Braves team total OVER', conf:'conf-med', label:'Medium', reason:'Deeper, better roster at home against a Cardinals team missing/limiting Winn; tempered because Waldrep\'s early results are unproven either direction.'},
+      {name:'Avoid Braves save-reliant props', conf:'conf-spec', label:'Speculative', reason:'With Suárez unavailable, late-inning bullpen usage is less predictable than usual.'}
+    ],
+    mlPick:'home', mlProb:0.57
+  },
+  {
+    id:'tb-kc', away:'Rays', home:'Royals', awayAbbr:'TB', homeAbbr:'KC',
+    time:'7:40 PM EDT', park:'Kauffman Stadium',
+    awayRec:'50-33', homeRec:'35-52',
+    awayP:{name:'Ian Seymour', hand:'LHP', line:'4-1, 4.32 ERA, 52 SO'},
+    homeP:{name:'Stephen Kolek', hand:'RHP', line:'4-2, 4.15 ERA, 34 SO'},
+    injuries:[
+      {team:'KC', player:'Bobby Witt Jr.', status:'OUT', tag:'tag-out', note:'Knee — out of the lineup for a 6th straight game.', impact:'Royals\' best player and an MVP-caliber bat. This is a massive downgrade to Kansas City\'s offense whenever he\'s out.'},
+      {team:'KC', player:'Maikel Garcia', status:'OUT', tag:'tag-out', note:'Hand, placed on IL.', impact:'Everyday 3B and an All-Star this year — second key bat missing from the lineup.'},
+      {team:'TB', player:'Chandler Simpson / Taylor Walls', status:'DTD', tag:'tag-dtd', note:'Both left a recent game with injuries.', impact:'Depth pieces — worth confirming they\'re in tonight\'s lineup, but not central offensive engines.'}
+    ],
+    context:'This is one of the clearest lineup-driven leans on the slate. Kansas City is already the weaker team by record (35-52) and is missing two of its best position players — Bobby Witt Jr. and Maikel Garcia — gutting the middle of their order. Tampa Bay is a good team (50-33) and shouldn\'t need a great pitching performance to win this one.',
+    props:[
+      {name:'Rays team total OVER', conf:'conf-high', label:'High', reason:'Royals are missing their two best position players (Witt Jr., Garcia) against a good Rays roster.'},
+      {name:'Royals team total UNDER', conf:'conf-high', label:'High', reason:'Same reasoning — the middle of Kansas City\'s order is significantly weakened right now.'}
+    ],
+    mlPick:'away', mlProb:0.66
+  },
+  {
+    id:'det-tex', away:'Tigers', home:'Rangers', awayAbbr:'DET', homeAbbr:'TEX',
+    time:'8:05 PM EDT', park:'Globe Life Field',
+    awayRec:'38-49', homeRec:'44-43',
+    awayP:{name:'Framber Valdez', hand:'LHP', line:'4-5, 4.05 ERA, 77 SO'},
+    homeP:{name:'Nathan Eovaldi', hand:'RHP', line:'8-7, 3.95 ERA, 101 SO'},
+    injuries:[
+      {team:'DET', player:'Justin Verlander', status:'OUT', tag:'tag-out', note:'Scratched with a new injury (strained hamstring) right as he was set to return — likely out weeks.', impact:'Not pitching tonight regardless, but signals a Tigers rotation still working through instability.'},
+      {team:'DET', player:'Jack Flaherty', status:'DTD', tag:'tag-dtd', note:'Set to make a rehab start, could be close to returning.', impact:'Would be a real boost to Detroit\'s rotation once activated — not yet.'},
+      {team:'TEX', player:'Jack Leiter', status:'OUT', tag:'tag-out', note:'Underwent right ankle surgery.', impact:'Rangers pitching depth prospect out — limited immediate lineup/rotation impact tonight.'},
+      {team:'DET', player:'Casey Mize', status:'BACK', tag:'tag-back', note:'Activated from the IL this week (2.27 ERA over 9 starts) and reigning AL Cy Young winner Tarik Skubal has also rejoined the rotation recently.', impact:'Not pitching tonight, but signals Detroit\'s rotation is trending healthier even with Verlander out again.'}
+    ],
+    context:'Detroit is the weaker team by record (38-49) and their rotation situation is messy — Verlander freshly re-injured, Flaherty not yet activated. Texas at home with a similarly effective starter (Eovaldi 3.95 ERA vs Valdez 4.05 ERA) is the more complete team on paper tonight.',
+    props:[
+      {name:'Rangers team total OVER', conf:'conf-med', label:'Medium', reason:'Home team, slightly better overall roster, and Detroit\'s rotation is dealing with real instability beyond tonight\'s starter.'}
+    ],
+    mlPick:'home', mlProb:0.56
+  },
+  {
+    id:'laa-sea', away:'Angels', home:'Mariners', awayAbbr:'LAA', homeAbbr:'SEA',
+    time:'9:40 PM EDT', park:'T-Mobile Park',
+    awayRec:'36-51', homeRec:'44-43',
+    awayP:{name:'Walbert Ureña', hand:'RHP', line:'5-6, 3.14 ERA, 69 SO'},
+    homeP:{name:'Bryce Miller', hand:'RHP', line:'3-2, 1.97 ERA, 54 SO', note:'Elite form of late — sub-2.00 ERA.'},
+    injuries:[
+      {team:'LAA', player:'Mike Trout', status:'OUT', tag:'tag-out', note:'On the IL with a hamstring strain.', impact:'Angels\' best hitter and one of the most impactful bats in the league — this significantly weakens an already-struggling offense.'},
+      {team:'LAA', player:'Grayson Rodriguez', status:'OUT', tag:'tag-out', note:'Low back tightness, on the IL.', impact:'Rotation depth hit, not pitching tonight anyway.'},
+      {team:'SEA', player:'Julio Rodríguez', status:'DTD', tag:'tag-dtd', note:'Day-to-day with a hamstring spasm, was out of the lineup in his last game.', impact:'Mariners\' best all-around player — if he\'s a late scratch tonight it meaningfully softens Seattle\'s offense, so this is worth checking right before first pitch.'},
+      {team:'SEA', player:'Dominic Canzone', status:'DTD', tag:'tag-dtd', note:'Exited a recent game with a hamstring issue.', impact:'Complementary outfield bat — moderate impact if out.'}
+    ],
+    context:'Seattle is favored on multiple fronts: better record, home field, and a starter (Bryce Miller, 1.97 ERA) pitching well above Ureña\'s level. The offsetting risk is Julio Rodríguez\'s hamstring — confirm he\'s in the lineup before leaning on Mariners offensive props. The Angels are without Mike Trout, which is a significant blow to an already bottom-of-the-league offense (36-51).',
+    props:[
+      {name:'Angels team total UNDER', conf:'conf-high', label:'High', reason:'Missing Mike Trout against a starter (Miller) running a sub-2.00 ERA is about as tough a spot as an offense can be in.'},
+      {name:'Mariners moneyline (not props)', conf:'conf-med', label:'Medium', reason:'Confidence would be High if Julio Rodríguez is confirmed in the lineup — check pregame before betting Seattle offensive props specifically.'}
+    ],
+    mlPick:'home', mlProb:0.65
+  },
+  {
+    id:'sd-lad', away:'Padres', home:'Dodgers', awayAbbr:'SD', homeAbbr:'LAD',
+    time:'10:10 PM EDT', park:'Dodger Stadium',
+    awayRec:'43-42', homeRec:'56-31',
+    awayP:{name:'Randy Vásquez', hand:'RHP', line:'6-6, 4.44 ERA, 60 SO'},
+    homeP:{name:'Roki Sasaki', hand:'RHP', line:'3-5, 4.88 ERA, 72 SO', note:'Results below expectations for a high-profile arm; strikeout stuff still plays but command/runs allowed has been shaky.'},
+    injuries:[
+      {team:'SD', player:'Freddy Fermín', status:'OUT', tag:'tag-out', note:'Concussion IL.', impact:'Backstop, moderate lineup impact.'},
+      {team:'LAD', player:'Kyle Tucker', status:'DTD', tag:'tag-dtd', note:'Getting encouraging updates on a back issue.', impact:'If limited or out, that\'s a real dent to LA\'s lineup — he\'s one of their best hitters. Confirm status pregame.'},
+      {team:'LAD', player:'Will Smith', status:'OUT', tag:'tag-out', note:'Manager Dave Roberts confirmed the catcher isn\'t expected back from the IL (neck inflammation) until after the All-Star break.', impact:'Everyday catcher and one of LA\'s best hitters — a real subtraction from the middle of the order for the foreseeable future.'}
+    ],
+    context:'Los Angeles is the best record in this game by a wide margin (56-31) and at home, which is the biggest single factor here — this is roster-strength driven more than a pitching mismatch, since neither starter (Vásquez 4.44 ERA, Sasaki 4.88 ERA) has been sharp. Worth confirming Kyle Tucker\'s health status before leaning heavily on Dodgers offensive props specifically.',
+    props:[
+      {name:'Game total runs OVER', conf:'conf-med', label:'Medium', reason:'Neither starter has pitched well by ERA this season, which tilts toward more scoring than a typical Dodger Stadium game.'}
+    ],
+    mlPick:'home', mlProb:0.62
+  }
+];
+
+// ---------- News Wire data (summarized in our own words, sourced from official/beat reporting) ----------
+const news = [
+  {
+    date:'Jul 1, 2026', teams:['CLE'],
+    headline:'Guardians\' Ramírez has hamate surgery, Vogt confirms',
+    body:'Cleveland All-Star third baseman José Ramírez underwent surgery Tuesday to remove the hook of a broken hamate bone in his left hand, an injury suffered fouling off a pitch over the weekend against Detroit. Manager Stephen Vogt said the procedure went as planned; normal recovery time is five to seven weeks.',
+    source:'Fox Sports', url:'https://www.foxsports.com/stories/mlb/mlb-2026-buzz-injuries-news-trades-rumors'
+  },
+  {
+    date:'Jul 1, 2026', teams:['CLE'],
+    headline:'Guardians also lose Martínez to fractured foot',
+    body:'In the same game Ramírez was hurt, Cleveland outfielder/infielder Angel Martínez suffered a nondisplaced fracture in his left foot fouling off a pitch. Vogt said Tuesday that Martínez could be out four to six weeks — a second regular lost from one game for the Guardians.',
+    source:'Fox Sports', url:'https://www.foxsports.com/stories/mlb/mlb-2026-buzz-injuries-news-trades-rumors'
+  },
+  {
+    date:'Jul 1, 2026', teams:['LAA'],
+    headline:'Angels place Trout back on the injured list',
+    body:'Los Angeles announced before Wednesday night\'s game that 11-time All-Star Mike Trout was placed on the 10-day IL with a right hamstring strain. The club recalled infielder Christian Moore from Triple-A Salt Lake as part of a related round of roster moves. Trout had played in 74 of the team\'s first 75 games this season before the setback.',
+    source:'Fox Sports', url:'https://www.foxsports.com/stories/mlb/mlb-2026-buzz-injuries-news-trades-rumors'
+  },
+  {
+    date:'Jul 1, 2026', teams:['PHI'],
+    headline:'Interim manager Mattingly pulls Wheeler after 4⅔ strong innings',
+    body:'Phillies ace Zack Wheeler left Wednesday\'s 10-6 win over Pittsburgh visibly frustrated after interim manager Don Mattingly pulled him following 104 pitches over 4⅔ innings, despite Wheeler having just retired the first two batters of a new frame.',
+    source:'MLB.com', url:'https://www.mlb.com/news'
+  },
+  {
+    date:'Jul 1, 2026', teams:['COL','MIA'],
+    headline:'Moniak powers Rockies past Marlins at Coors',
+    body:'Mickey Moniak homered, doubled, and tripled in his first three at-bats as Colorado beat Miami 6-3 Wednesday night at Coors Field. It\'s the second time this season Moniak has fallen a single short of the cycle.',
+    source:'MLB.com', url:'https://www.mlb.com/news'
+  },
+  {
+    date:'Jul 1, 2026', teams:['DET'],
+    headline:'Mize activated as Tigers rotation gets healthier',
+    body:'Detroit activated right-hander Casey Mize from the injured list this week, optioning Keider Montero to make room. Mize carries a 2.27 ERA over nine starts this season. His return follows reigning AL Cy Young winner Tarik Skubal\'s recent return to the rotation, even as Justin Verlander deals with a new hamstring issue.',
+    source:'MLB.com', url:'https://www.mlb.com/news'
+  },
+  {
+    date:'Jul 1, 2026', teams:['LAD'],
+    headline:'Roberts: Will Smith out until after the All-Star break',
+    body:'Dodgers manager Dave Roberts confirmed catcher Will Smith is not expected back from the injured list (neck inflammation) until after the All-Star break, with the issue not yet resolving enough to allow baseball activities.',
+    source:'MLB.com', url:'https://www.mlb.com/news'
+  },
+  {
+    date:'Jul 1, 2026', teams:['MIL'],
+    headline:'Misiorowski\'s All-Star status uncertain despite dominant year',
+    body:'Despite a 1.45 ERA and elite strikeout numbers, there\'s a real chance Brewers phenom Jacob Misiorowski doesn\'t pitch in this year\'s All-Star Game, per MLB.com reporting — a scheduling/workload question rather than a performance one.',
+    source:'MLB.com', url:'https://www.mlb.com/news'
+  },
+  {
+    date:'Jun 30, 2026', teams:['KC'],
+    headline:'Witt Jr. exits early again, remains day-to-day',
+    body:'Royals star Bobby Witt Jr. has now missed six straight games with a knee issue. Before this stretch he was batting .294 with a .368 OBP, 10 homers, 32 RBIs, and an MLB-leading 28 stolen bases — underscoring how much Kansas City\'s offense is missing with him out.',
+    source:'Fox Sports', url:'https://www.foxsports.com/stories/mlb/mlb-2026-buzz-injuries-news-trades-rumors'
+  },
+  {
+    date:'Jul 1, 2026', teams:['MLB'],
+    headline:'All-Star Futures Game rosters unveiled ahead of July 12',
+    body:'MLB announced full rosters Wednesday for the All-Star Futures Game, set for noon ET on July 12 at Citizens Bank Park as part of All-Star Week. Brewers shortstop Jesús Made headlines the National League side as the game\'s No. 1 overall prospect. Phase 2 All-Star voting to determine position-player starters is also open now.',
+    source:'MLB.com', url:'https://www.mlb.com/news/2026-futures-game-rosters'
+  }
+];
+
+function renderNews(){
+  const list = document.getElementById('newsList');
+  list.innerHTML = news.map(n=>`
+    <div class="clip">
+      <div class="clip-top">
+        <div class="clip-tags">${n.teams.map(t=>`<span class="clip-team">${t}</span>`).join('')}</div>
+        <div class="clip-date">${n.date}</div>
+      </div>
+      <div class="clip-headline">${n.headline}</div>
+      <div class="clip-body">${n.body}</div>
+      <div class="clip-foot">
+        <div class="clip-source">via ${n.source}</div>
+        <a class="clip-source" href="${n.url}" target="_blank" rel="noopener">Read full story →</a>
+      </div>
+    </div>
+  `).join('');
+}
+renderNews();
+
+// ---------- Odds helpers ----------
+let oddsFormat = 'american'; // 'american' | 'percent'
+
+function probToAmerican(p){
+  if(p<=0||p>=1) return '—';
+  if(p>=0.5){
+    const odds = -Math.round((p/(1-p))*100);
+    return odds;
+  } else {
+    const odds = Math.round(((1-p)/p)*100);
+    return '+'+odds;
+  }
+}
+function fmtOdds(o){ return typeof o==='number' && o>0 ? '+'+o : o; }
+function americanToDecimal(american){
+  if(typeof american==='string') return null;
+  return american>0 ? (american/100)+1 : (100/Math.abs(american))+1;
+}
+// Single-leg display value: respects the current global format
+function displayLine(prob){
+  if(oddsFormat==='percent') return Math.round(prob*100)+'%';
+  return fmtOdds(probToAmerican(prob));
+}
+
+// ---------- Live market watcher (Kalshi, via the desktop app's main process) ----------
+// kalshiState holds the last snapshot pushed over IPC. In a plain browser tab
+// (no window.kalshiBridge) this just stays empty and everything falls back to
+// the model estimates, same as before.
+let kalshiState = { status:'unavailable', updatedAt:null, markets:[], error:null };
+let liveByGame = {}; // gameId -> { homeProb, marketTitle, ticker }
+
+function normalize(s){ return s.toLowerCase().replace(/[^a-z]/g,''); }
+
+// Matches Kalshi's KXMLBGAME markets to our slate by looking for both team
+// nicknames inside the market title, then reads which side is "yes."
+function matchKalshiMarkets(){
+  liveByGame = {};
+  if(!kalshiState.markets || kalshiState.markets.length===0) return;
+  games.forEach(g=>{
+    const homeN = normalize(g.home), awayN = normalize(g.away);
+    const hit = kalshiState.markets.find(m=>{
+      const t = normalize(m.title || m.subtitle || '');
+      return t.includes(homeN) && t.includes(awayN);
+    });
+    if(!hit) return;
+    const yesBid = hit.yes_bid_dollars ?? (hit.yes_bid!=null ? hit.yes_bid/100 : null);
+    const yesAsk = hit.yes_ask_dollars ?? (hit.yes_ask!=null ? hit.yes_ask/100 : null);
+    if(yesBid==null || yesAsk==null) return;
+    const yesMid = (yesBid+yesAsk)/2; // Kalshi contracts settle $1/$0, so mid price ≈ implied probability
+    const title = (hit.title || hit.subtitle || '').toLowerCase();
+    // Figure out which team the "yes" side refers to, so we can express this as a home-win probability.
+    const homeIsYesSubject = title.indexOf(homeN.slice(0,4))>-1 &&
+      title.indexOf('win') > -1 &&
+      title.indexOf(homeN.slice(0,4)) < title.indexOf('win');
+    const homeProb = homeIsYesSubject ? yesMid : (1-yesMid);
+    // Raw fields kept for order construction — trading always uses the freshest
+    // ask/bid at the moment the order modal is opened, this cached copy is just
+    // for prefilling the form.
+    liveByGame[g.id] = {
+      homeProb, marketTitle: hit.title || hit.subtitle, ticker: hit.ticker,
+      homeIsYesSubject, yesBid, yesAsk
+    };
+  });
+}
+
+// Given a game and which side the person wants to back ('home' | 'away'),
+// returns the Kalshi order parameters needed to actually buy that outcome.
+function getTradeQuote(g, wantSide){
+  const live = liveByGame[g.id];
+  if(!live) return null;
+  const wantsYesSubject = (wantSide==='home') === live.homeIsYesSubject;
+  if(wantsYesSubject){
+    return { ticker: live.ticker, side:'yes', priceDollars: live.yesAsk, teamName: wantSide==='home'?g.home:g.away };
+  } else {
+    // Backing the non-yes-subject team means buying "no" — priced off the complement of the yes bid.
+    const noAskDollars = 1 - live.yesBid;
+    return { ticker: live.ticker, side:'no', priceDollars: noAskDollars, teamName: wantSide==='home'?g.home:g.away };
+  }
+}
+
+// Returns the lean to actually display for a game: live Kalshi price if we
+// have a confident match, otherwise the model estimate from the research pass.
+function getLean(g){
+  const baseHomeProb = g.mlPick==='home' ? g.mlProb : (1-g.mlProb);
+  const live = liveByGame[g.id];
+  const homeProb = live ? live.homeProb : baseHomeProb;
+  const pick = homeProb>=0.5 ? 'home' : 'away';
+  const prob = homeProb>=0.5 ? homeProb : (1-homeProb);
+  const pickTeam = pick==='home' ? g.home : g.away;
+  return {
+    pickTeam, prob, pick,
+    source: live ? 'kalshi' : 'model',
+    marketTitle: live ? live.marketTitle : null
+  };
+}
+
+// ---------- Render Slate ----------
+const slateEl = document.getElementById('view-slate');
+function renderSlate(){
+  slateEl.innerHTML = '';
+  games.forEach(g=>{
+  const div = document.createElement('div');
+  div.className='game';
+  div.id='card-'+g.id;
+  // preserve open/closed state across re-renders
+  if(openCards.has(g.id)) div.classList.add('open');
+
+  const lean = getLean(g);
+  const mlProbPct = Math.round(g.mlProb*100);
+
+  div.innerHTML = `
+    <div class="game-head" onclick="toggleGame('${g.id}')">
+      <div class="matchup">
+        <div class="teams"><span class="away">${g.away}</span><span class="at">@</span><span class="home">${g.home}</span></div>
+        <div class="time">${g.time} · ${g.park}</div>
+      </div>
+      <div style="display:flex;align-items:center;">
+        <div class="lean-chip ${lean.source==='kalshi'?'lean-live':''}">${lean.source==='kalshi'?'● LIVE':'LEAN'}: ${lean.pickTeam} ${displayLine(lean.prob)}</div>
+        <div class="chevron">▶</div>
+      </div>
+    </div>
+    <div class="game-body">
+      <div class="section-label">Probable Pitchers</div>
+
+      <div class="pitchers">
+        <div class="pitcher-card">
+          <div class="side">${g.awayAbbr} (${g.awayRec})</div>
+          <div class="name">${g.awayP.name} · ${g.awayP.hand}</div>
+          <div class="stat">${g.awayP.line}</div>
+          ${g.awayP.note ? `<div class="stat" style="margin-top:6px;color:var(--amber)">${g.awayP.note}</div>` : ''}
+        </div>
+        <div class="pitcher-card">
+          <div class="side">${g.homeAbbr} (${g.homeRec})</div>
+          <div class="name">${g.homeP.name} · ${g.homeP.hand}</div>
+          <div class="stat">${g.homeP.line}</div>
+          ${g.homeP.note ? `<div class="stat" style="margin-top:6px;color:var(--amber)">${g.homeP.note}</div>` : ''}
+        </div>
+      </div>
+
+      <div class="section-label">Injuries &amp; Lineup Notes</div>
+      ${g.injuries.map(inj=>`
+        <div class="injury-item">
+          <div class="injury-tag ${inj.tag}">${inj.status}</div>
+          <div class="injury-text"><b>${inj.player}</b> (${inj.team}) — ${inj.note}
+            <span class="impact">${inj.impact}</span>
+          </div>
+        </div>
+      `).join('')}
+
+      <div class="section-label">Matchup Read</div>
+      <div class="context-text">${g.context}</div>
+
+      <div class="section-label">Prop Angles</div>
+      ${g.props.map(p=>`
+        <div class="prop">
+          <div class="prop-head">
+            <div class="prop-name">${p.name}</div>
+            <div class="confidence ${p.conf}">${p.label}</div>
+          </div>
+          <div class="prop-reason">${p.reason}</div>
+        </div>
+      `).join('')}
+
+      <div class="section-label">Moneyline Lean</div>
+      <div class="ml-box">
+        <div>
+          <div class="ml-pick">${lean.pickTeam} ML</div>
+          <div class="ml-prob">${lean.source==='kalshi' ? `Live Kalshi market · updated ${kalshiState.updatedAt ? new Date(kalshiState.updatedAt).toLocaleTimeString() : ''}` : `Model win probability: ${mlProbPct}% (no live market matched yet)`}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="text-align:right;">
+            <div class="ml-odds">${displayLine(lean.prob)}</div>
+            <div class="ml-prob">${lean.source==='kalshi' ? 'live implied price' : (oddsFormat==='percent' ? 'implied win chance (model)' : 'est. fair odds (model)')}</div>
+          </div>
+          <button class="add-parlay-btn" id="btn-${g.id}" onclick="event.stopPropagation(); toggleLeg('${g.id}')">+ Add to Parlay</button>
+        </div>
+      </div>
+    </div>
+  `;
+  slateEl.appendChild(div);
+  });
+  games.forEach(g=>{
+    const btn = document.getElementById('btn-'+g.id);
+    if(btn && selected.has(g.id)){ btn.classList.add('added'); btn.textContent='✓ Added'; }
+  });
+}
+
+const openCards = new Set();
+function toggleGame(id){
+  const el = document.getElementById('card-'+id);
+  el.classList.toggle('open');
+  if(el.classList.contains('open')) openCards.add(id); else openCards.delete(id);
+}
+
+// ---------- Parlay Builder ----------
+const legListEl = document.getElementById('legList');
+const selected = new Set();
+
+function renderLegs(){
+  legListEl.innerHTML = '';
+  games.forEach(g=>{
+    const lean = getLean(g);
+    const row = document.createElement('div');
+    row.className='leg-row';
+    row.innerHTML = `
+      <input type="checkbox" id="chk-${g.id}" onchange="toggleLeg('${g.id}')" ${selected.has(g.id)?'checked':''}>
+      <div class="leg-info">
+        <div class="leg-title">${lean.pickTeam} ML ${lean.source==='kalshi'?'<span class=\"live-dot\">●</span>':''} <span style="color:var(--muted);font-weight:400;">(${g.away} @ ${g.home})</span></div>
+        <div class="leg-sub">${Math.round(lean.prob*100)}% ${lean.source==='kalshi'?'live market':'model'} win probability</div>
+      </div>
+      <div class="leg-odds">${displayLine(lean.prob)}</div>
+    `;
+    legListEl.appendChild(row);
+  });
+}
+renderLegs();
+
+function toggleLeg(id){
+  const chk = document.getElementById('chk-'+id);
+  const btn = document.getElementById('btn-'+id);
+  if(selected.has(id)){
+    selected.delete(id);
+    if(chk) chk.checked=false;
+    if(btn){btn.classList.remove('added'); btn.textContent='+ Add to Parlay';}
+  } else {
+    selected.add(id);
+    if(chk) chk.checked=true;
+    if(btn){btn.classList.add('added'); btn.textContent='✓ Added';}
+  }
+  // sync the other control (checkbox vs button both reference same game)
+  const chk2 = document.getElementById('chk-'+id);
+  if(chk2) chk2.checked = selected.has(id);
+  const btn2 = document.getElementById('btn-'+id);
+  if(btn2){
+    if(selected.has(id)){btn2.classList.add('added'); btn2.textContent='✓ Added';}
+    else {btn2.classList.remove('added'); btn2.textContent='+ Add to Parlay';}
+  }
+  renderSlip();
+}
+
+function renderSlip(){
+  const slipLegs = document.getElementById('slipLegs');
+  const slipCount = document.getElementById('slipCount');
+  const combOddsEl = document.getElementById('combOdds');
+  const combProbEl = document.getElementById('combProb');
+  const payoutEl = document.getElementById('payout');
+  const riskFill = document.getElementById('riskFill');
+  const stakeInput = document.getElementById('stakeInput');
+
+  const legs = games.filter(g=>selected.has(g.id));
+  slipCount.textContent = `${legs.length} leg${legs.length!==1?'s':''} selected` + (legs.length>0 && (legs.length<3) ? ' — add at least 3 for a parlay' : '');
+
+  if(legs.length===0){
+    slipLegs.innerHTML = '<div class="slip-empty">Select 3–10 moneyline leans from the left to build a parlay.</div>';
+    combOddsEl.textContent='—'; combProbEl.textContent='—'; payoutEl.textContent='—'; riskFill.style.width='0%';
+    return;
+  }
+
+  slipLegs.innerHTML = legs.map(g=>{
+    const lean = getLean(g);
+    return `<div class="slip-leg">${lean.pickTeam} ML ${lean.source==='kalshi'?'<span class="live-dot">●</span>':''} <span style="color:var(--muted)">(${Math.round(lean.prob*100)}%)</span></div>`;
+  }).join('');
+
+  const combProb = legs.reduce((acc,g)=>acc*getLean(g).prob, 1);
+  const decimalOdds = legs.reduce((acc,g)=>acc*americanToDecimal(probToAmerican(getLean(g).prob)), 1);
+  const americanComb = decimalOdds>=2 ? Math.round((decimalOdds-1)*100) : Math.round(-100/(decimalOdds-1));
+  const stake = parseFloat(stakeInput.value)||0;
+  const payout = stake*decimalOdds;
+
+  combOddsEl.textContent = oddsFormat==='percent'
+    ? (combProb*100).toFixed(1)+'% implied'
+    : fmtOdds(americanComb>0? '+'+americanComb : americanComb);
+  combProbEl.textContent = (combProb*100).toFixed(1)+'%';
+  payoutEl.textContent = '$'+payout.toFixed(2)+' total return';
+
+  // risk bar: scale by legs count (3=low end, 10=high end) blended with probability
+  const legRisk = Math.min(1, (legs.length-3)/7); // 0 at 3 legs, 1 at 10 legs
+  const probRisk = 1-combProb;
+  const risk = Math.min(100, Math.round(((legRisk*0.5)+(probRisk*0.5))*100));
+  riskFill.style.width = risk+'%';
+
+  if(legs.length<3){
+    combOddsEl.classList.add('warn');
+  } else {
+    combOddsEl.classList.remove('warn');
+  }
+}
+
+document.getElementById('stakeInput').addEventListener('input', renderSlip);
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  selected.forEach(id=>{
+    const chk=document.getElementById('chk-'+id); if(chk) chk.checked=false;
+    const btn=document.getElementById('btn-'+id); if(btn){btn.classList.remove('added'); btn.textContent='+ Add to Parlay';}
+  });
+  selected.clear();
+  renderSlip();
+});
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-'+tab.dataset.view).classList.add('active');
+  });
+});
+
+// ---------- Format toggle ----------
+function setOddsFormat(fmt){
+  oddsFormat = fmt;
+  document.getElementById('fmtAmerican').classList.toggle('active', fmt==='american');
+  document.getElementById('fmtPercent').classList.toggle('active', fmt==='percent');
+  renderSlate();
+  renderLegs();
+  renderSlip();
+}
+
+// ---------- Initial render ----------
+renderSlate();
+renderSlip();
+
+// ---------- Live watcher (browser fetch — no Electron here) ----------
+// This is a public, unauthenticated Kalshi endpoint, so a plain browser fetch
+// is allowed to try it directly. If Kalshi doesn't grant this page's origin
+// CORS access, the fetch fails cleanly and everything just falls back to the
+// model estimates below — nothing breaks either way.
+const KALSHI_MARKETS_URL = 'https://external-api.kalshi.com/trade-api/v2/markets?series_ticker=KXMLBGAME&status=open&limit=200';
+const POLL_INTERVAL_MS = 45 * 1000;
+
+async function pollKalshiBrowser(){
+  try{
+    const res = await fetch(KALSHI_MARKETS_URL, { headers:{'Accept':'application/json'} });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    kalshiState = { status:'ok', updatedAt: new Date().toISOString(), markets: data.markets||[], error:null };
+  } catch(err){
+    kalshiState = { status:'error', updatedAt: new Date().toISOString(), markets: kalshiState.markets||[], error: err.message };
+  }
+  matchKalshiMarkets();
+  updateLiveStatus();
+  renderSlate();
+  renderLegs();
+  renderSlip();
+}
+
+function updateLiveStatus(){
+  const badge = document.getElementById('liveStatus');
+  const text = document.getElementById('liveStatusText');
+  if(kalshiState.status==='error' && Object.keys(liveByGame).length===0){
+    badge.className='live-status is-error';
+    text.textContent = 'Live odds unavailable in-browser — showing model estimates';
+  } else if(kalshiState.status==='ok'){
+    const matched = Object.keys(liveByGame).length;
+    badge.className='live-status is-live';
+    text.textContent = `Live · ${matched}/${games.length} games matched · ${kalshiState.updatedAt ? new Date(kalshiState.updatedAt).toLocaleTimeString() : ''}`;
+  } else {
+    badge.className='live-status';
+    text.textContent = 'Connecting…';
+  }
+}
+
+function manualRefresh(){
+  document.getElementById('liveStatusText').textContent = 'Refreshing…';
+  pollKalshiBrowser();
+}
+
+pollKalshiBrowser();
+setInterval(pollKalshiBrowser, POLL_INTERVAL_MS);
+
+// ---------- PWA service worker ----------
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+
+</script>
+</body>
+</html>
